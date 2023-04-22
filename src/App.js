@@ -15,7 +15,7 @@ import {
 import { listNotes } from "./graphql/queries";
 import {
     createNote as createNoteMutation,
-    deleteNote as deleteNoteMutation,
+    removeNote as removeNoteMutation,
     updateNote as updateNoteMutation,
 } from "./graphql/mutations";
 
@@ -33,11 +33,8 @@ const App = ({ signOut }) => {
         await Promise.all(
             notesFromAPI.map(async (note) => {
                 if (note.image) {
-                    console.log(`aca 1`);
                     const url = await Storage.get(note.name);
-                    console.log(`Image URL 111 for ${note.name}: ${url}`);
                     note.image = url;
-                    console.log(`Image URL for ${note.image}: ${url}`);
                 }
                 return note;
             })
@@ -45,20 +42,7 @@ const App = ({ signOut }) => {
         setNotes(notesFromAPI);
     }
 
-    async function updateNote(id, name, description, price) {
-        const updatedNote = {
-            id,
-            name,
-            description,
-            price: parseFloat(price),
-        };
-        await API.graphql({
-            query: updateNoteMutation,
-            variables: { input: updatedNote },
-        });
-        fetchNotes();
-        setEditingId(null);
-    }
+ 
 
     async function createNote(event) {
         event.preventDefault();
@@ -83,23 +67,38 @@ const App = ({ signOut }) => {
         event.target.reset();
     }
 
-    async function deleteNote({ id, name }) {
+    async function updateNote(id, name, description, price) {
+        const updatedNote = {
+            id,
+            name,
+            description,
+            price: parseFloat(price),
+        };
+        await API.graphql({
+            query: updateNoteMutation,
+            variables: { input: updatedNote },
+        });
+        fetchNotes();
+        setEditingId(null);
+    }
+
+    async function removeNote({ id, name }) {
         const newNotes = notes.filter((note) => note.id !== id);
         setNotes(newNotes);
         await Storage.remove(name);
         await API.graphql({
-            query: deleteNoteMutation,
+            query: removeNoteMutation,
             variables: { input: { id } },
         });
     }
 
-    const calculateTotalPrice = () => {
+    const checkTotalPrice = () => {
         return notes.reduce((total, note) => total + note.price, 0).toFixed(2);
     };
 
     return (
         <View className="App">
-            <Heading level={1}>My Food App</Heading>
+            <Heading level={1}>FINAL TEST - FOOD APP</Heading>
             <View as="form" margin="3rem 0" onSubmit={createNote}>
                 <Flex direction="row" justifyContent="center">
                     <TextField
@@ -139,7 +138,7 @@ const App = ({ signOut }) => {
                     <Button type="submit">Add Note</Button>
                 </Flex>
             </View>
-            <Heading level={3}>Total Price: ${calculateTotalPrice()}</Heading>
+            <Heading level={3}>Total Price: ${checkTotalPrice()}</Heading>
             <Flex direction="column" gap="1rem">
                 {notes.map((note) => (
                     <Flex
@@ -187,7 +186,7 @@ const App = ({ signOut }) => {
                         ) : (
                             <Button onClick={() => setEditingId(note.id)}>Edit</Button>
                         )}
-                        <Button onClick={() => deleteNote(note)}>Delete</Button>
+                        <Button onClick={() => removeNote(note)}>Delete</Button>
                     </Flex>
                 ))}
             </Flex>
